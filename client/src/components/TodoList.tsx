@@ -1,74 +1,80 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Job } from "../interface";
-import {addJob,changeStatus,deleteJob,getJobs,updateJob,} from "../store/reducer/todoListReducer";
+import { addJob, changeStatus, deleteJob, getJobs, updateJob } from "../store/reducer/todoListReducer";
 
 export default function TodoList() {
-  const [inputValue, setInputValue] = useState<string>("");
-  const [checkIdDelete, setCheckIdDelete] = useState<number>(0);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [showModalDelete, setShowModalDelete] = useState<boolean>(false);  const [showModalAdd, setShowModalAdd] = useState<boolean>(false);
+  const [taskName, setTaskName] = useState<string>("");
+  const [taskIdToDelete, setTaskIdToDelete] = useState<number>(0);
+  const [taskIdToEdit, setTaskIdToEdit] = useState<number | null>(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
+  const [isEmptyTaskNameWarningVisible, setIsEmptyTaskNameWarningVisible] = useState<boolean>(false);
 
-  const jobs = useSelector((state: any) => {
-    return state.jobs.jobs;
-  });
+  // Lấy danh sách công việc từ Redux store
+  const jobs = useSelector((state: any) => state.jobs.jobs);
   const dispatch = useDispatch();
+
+  // Lấy công việc từ server khi component mount
   useEffect(() => {
     dispatch(getJobs());
   }, [dispatch]);
-  //   hàm thêm công việc
-  const addNewJob = (e: React.FormEvent) => {
+
+  // Thêm công việc mới
+  const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim() === "") {
-      setShowModalAdd(true);
+    if (taskName.trim() === "") {
+      setIsEmptyTaskNameWarningVisible(true);
       return;
     }
     const newJob = {
-      name: inputValue,
+      name: taskName,
       status: false,
     };
     dispatch(addJob(newJob));
-    setInputValue("");
+    setTaskName("");
   };
 
-  // hàm lấy giá trị trong input
-  const valueInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+  // Xử lý thay đổi tên công việc trong ô nhập liệu
+  const handleTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTaskName(e.target.value);
   };
 
-  //   hàm hiển thị modal xóa
-  const handleModalDelete = (id: number) => {
-    setShowModalDelete(true);
-    setCheckIdDelete(id);
+  // Hiển thị modal xác nhận xóa
+  const showDeleteConfirmationModal = (id: number) => {
+    setIsDeleteModalVisible(true);
+    setTaskIdToDelete(id);
   };
 
-  //hàm xóa công việc
-  const handleDeleteJob = () => {
-    dispatch(deleteJob(checkIdDelete));
-    setShowModalDelete(false);
+  // Xác nhận xóa công việc
+  const confirmTaskDeletion = () => {
+    dispatch(deleteJob(taskIdToDelete));
+    setIsDeleteModalVisible(false);
   };
 
-  //hàm checked công việc
-  const checkedJob = (id: number, status: boolean) => {
+  // Thay đổi trạng thái công việc
+  const toggleTaskStatus = (id: number, status: boolean) => {
     dispatch(changeStatus({ id, status: !status }));
   };
 
-  //   hàm chỉnh sửa công việc
-  const handleChange = (id: number) => {
+  // Bắt đầu chỉnh sửa công việc
+  const startEditingTask = (id: number) => {
     const jobToChange = jobs.find((item: Job) => item.id === id);
     if (jobToChange) {
-      setSelectedJobId(id);
-      setInputValue(jobToChange.name);
+      setTaskIdToEdit(id);
+      setTaskName(jobToChange.name);
     }
   };
-  const handleUpdate = (e: React.FormEvent) => {
+
+  // Cập nhật công việc
+  const handleUpdateTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedJobId !== null) {
-      dispatch(updateJob({ id: selectedJobId, name: inputValue }));
-      setSelectedJobId(null);
-      setInputValue("");
+    if (taskIdToEdit !== null) {
+      dispatch(updateJob({ id: taskIdToEdit, name: taskName }));
+      setTaskIdToEdit(null);
+      setTaskName("");
     }
   };
+
   return (
     <div>
       <section className="vh-100 gradient-custom">
@@ -80,8 +86,8 @@ export default function TodoList() {
                   <form className="d-flex justify-content-center align-items-center mb-4">
                     <div className="form-outline flex-fill">
                       <input
-                        value={inputValue}
-                        onChange={valueInput}
+                        value={taskName}
+                        onChange={handleTaskNameChange}
                         type="text"
                         id="form2"
                         className="form-control"
@@ -91,13 +97,11 @@ export default function TodoList() {
                       </label>
                     </div>
                     <button
-                      onClick={
-                        selectedJobId !== null ? handleUpdate : addNewJob
-                      }
+                      onClick={taskIdToEdit !== null ? handleUpdateTask : handleAddTask}
                       type="submit"
                       className="btn btn-info ms-2"
                     >
-                      {selectedJobId !== null ? "Cập nhật" : "Thêm"}
+                      {taskIdToEdit !== null ? "Cập nhật" : "Thêm"}
                     </button>
                   </form>
                   {/* Tabs navs */}
@@ -126,7 +130,7 @@ export default function TodoList() {
                                 className="form-check-input me-2"
                                 type="checkbox"
                                 checked={item.status}
-                                onClick={() => checkedJob(item.id, item.status)}
+                                onClick={() => toggleTaskStatus(item.id, item.status)}
                               />
                               {item.status ? (
                                 <s>{item.name}</s>
@@ -136,11 +140,11 @@ export default function TodoList() {
                             </div>
                             <div className="d-flex gap-3">
                               <i
-                                onClick={() => handleChange(item.id)}
+                                onClick={() => startEditingTask(item.id)}
                                 className="fas fa-pen-to-square text-warning"
                               />
                               <i
-                                onClick={() => handleModalDelete(item.id)}
+                                onClick={() => showDeleteConfirmationModal(item.id)}
                                 className="far fa-trash-can text-danger"
                               />
                             </div>
@@ -156,7 +160,7 @@ export default function TodoList() {
         </div>
       </section>
       {/* Modal xác nhận xóa */}
-      {showModalDelete && (
+      {isDeleteModalVisible && (
         <div className="overlay">
           <div className="modal-custom">
             <div className="modal-header-custom">
@@ -168,12 +172,12 @@ export default function TodoList() {
             </div>
             <div className="modal-footer-footer">
               <button
-                onClick={() => setShowModalDelete(false)}
+                onClick={() => setIsDeleteModalVisible(false)}
                 className="btn btn-light"
               >
                 Hủy
               </button>
-              <button onClick={handleDeleteJob} className="btn btn-danger">
+              <button onClick={confirmTaskDeletion} className="btn btn-danger">
                 Xóa
               </button>
             </div>
@@ -181,7 +185,7 @@ export default function TodoList() {
         </div>
       )}
       {/* Modal cảnh báo lỗi */}
-      {showModalAdd && (
+      {isEmptyTaskNameWarningVisible && (
         <div className="overlay">
           <div className="modal-custom">
             <div className="modal-header-custom">
@@ -193,7 +197,7 @@ export default function TodoList() {
             </div>
             <div className="modal-footer-footer">
               <button
-                onClick={() => setShowModalAdd(false)}
+                onClick={() => setIsEmptyTaskNameWarningVisible(false)}
                 className="btn btn-light"
               >
                 Đóng
