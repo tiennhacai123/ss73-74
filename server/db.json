@@ -1,0 +1,19 @@
+{
+  "jobs": [
+    {
+      "id": 1,
+      "name": "nấu cơm",
+      "status": false
+    },
+    {
+      "id": 2,
+      "name": "chơi game",
+      "status": true
+    },
+    {
+      "name": "đi bay",
+      "status": true,
+      "id": 4
+    }
+  ]
+}
